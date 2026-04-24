@@ -16,5 +16,8 @@ This project exposes a small Gradio application that does the following:
 ## Project layout
 
 - `assets/` is a good place for sample JPG inputs or reference images.
-- `src/color_harmony/` contains the Gradio application package.
+- `src/app.py` launches the app.
+- `src/gradio_app.py` defines the Blocks interface and event wiring.
+- `src/load_image.py`, `src/refresh_histogram.py`, and `src/reset_app.py` hold the Gradio callback logic.
+- `src/compute_hue_statistics.py`, `src/build_histogram.py`, and `src/hue_label.py` hold the hue analysis logic.
 - `tests/` contains unit tests for hue-bucket classification.

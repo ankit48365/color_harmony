@@ -15,4 +15,11 @@ uv run color-harmony
 uv run pytest
 ```
 
-More detail lives in `docs/gradio-ui.md`.
+## Source layout
+
+- `src/app.py` launches the Gradio experience.
+- `src/gradio_app.py` builds the interface and wires event callbacks.
+- `src/compute_hue_statistics.py`, `src/build_histogram.py`, and `src/hue_label.py` hold the color-analysis logic.
+- `src/load_image.py`, `src/refresh_histogram.py`, and `src/reset_app.py` handle UI callback behavior.
+
+More detail lives in `docs/gradio-ui.md` and `docs/design.md`.

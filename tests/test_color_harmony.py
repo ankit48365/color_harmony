@@ -1,8 +1,15 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import app
+import gradio_app
 import numpy as np
 
-from color_harmony.app import compute_hue_statistics
+from compute_hue_statistics import compute_hue_statistics
+
+
+def test_entrypoint_modules_import_cleanly() -> None:
+    assert callable(app.main)
+    assert callable(gradio_app.create_demo)
 
 
 def test_three_bucket_classification_matches_rgb_primaries() -> None:
