@@ -1,7 +1,7 @@
 # color_harmony
 
-![coverage](https://img.shields.io/badge/coverage-67.00%25-blue)
-![pylint](https://img.shields.io/badge/pylint-7.44-green)
+![coverage](https://img.shields.io/badge/coverage-81.00%25-blue)
+![pylint](https://img.shields.io/badge/pylint-10.00-green)
 
 Small Gradio app for uploading a JPG, choosing `X` hue classes, viewing a pixel-count histogram for the closest color buckets, and tuning each bucket's saturation weight with live hex-code details.
 
