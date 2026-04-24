@@ -1,3 +1,5 @@
+"""Human-friendly labels for hue bucket centers."""
+
 from __future__ import annotations
 
 

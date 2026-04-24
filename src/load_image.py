@@ -1,3 +1,5 @@
+"""Upload callback helpers for initializing the color bucket interface."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,13 +9,14 @@ import numpy as np
 from matplotlib.figure import Figure
 from PIL import Image, ImageOps
 
-from build_histogram import build_histogram
+from bucket_details import BucketDetailsTable, build_bucket_outputs
 
 ComponentUpdate = dict[str, Any]
 LoadImageResult = tuple[
     np.ndarray | None,
     np.ndarray | None,
     Figure | None,
+    BucketDetailsTable,
     ComponentUpdate,
     ComponentUpdate,
 ]
@@ -28,7 +31,8 @@ def load_image(file_path: str | None, bucket_count: int) -> LoadImageResult:
 
     Returns:
         A tuple with the stored image state, preview image, histogram figure,
-        upload-panel visibility update, and results-section visibility update.
+        bucket-detail rows, upload-panel visibility update, and results-section
+        visibility update.
     """
 
     if not file_path:
@@ -36,6 +40,7 @@ def load_image(file_path: str | None, bucket_count: int) -> LoadImageResult:
             None,
             None,
             None,
+            [],
             gr.update(visible=True),
             gr.update(visible=False),
         )
@@ -43,11 +48,12 @@ def load_image(file_path: str | None, bucket_count: int) -> LoadImageResult:
     with Image.open(file_path) as uploaded_image:
         rgb_image = np.array(ImageOps.exif_transpose(uploaded_image).convert("RGB"))
 
-    histogram = build_histogram(rgb_image, int(bucket_count))
+    histogram, bucket_details = build_bucket_outputs(int(bucket_count), rgb_image)
     return (
         rgb_image,
         rgb_image,
         histogram,
+        bucket_details,
         gr.update(visible=False),
         gr.update(visible=True),
     )
