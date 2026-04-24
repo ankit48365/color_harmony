@@ -69,6 +69,8 @@ If GitHub CLI is configured and you want Codex to fetch the issue directly, you 
 
 ```text
 Use GitHub CLI to read issue #42 and implement it.
+or
+Use GitHub CLI to read issue {CreateActionsWorkflows #1} and implement it.
 ```
 
 ## Step 2: Create the working branch
