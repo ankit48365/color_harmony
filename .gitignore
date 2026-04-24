@@ -208,6 +208,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+.tools/
+.uv-cache/
 
 # Marimo
 marimo/_static/

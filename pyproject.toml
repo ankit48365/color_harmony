@@ -26,5 +26,7 @@ sources = ["src"]
 
 [dependency-groups]
 dev = [
+    "coverage>=7.6.0",
+    "pylint>=3.3.0",
     "pytest>=9.0.3",
 ]
