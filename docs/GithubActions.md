@@ -360,3 +360,13 @@ The most important distinction is this:
 - Deleting the branch is only cleanup.
 
 Codex fits best as your local implementation and automation partner inside that process.
+
+## Automated quality badges
+
+This repository also includes a GitHub Actions workflow for issue `#1`:
+
+- Workflow file: `.github/workflows/update-quality-badges.yml`
+- Trigger rule: the workflow listens to `push`, but the job only runs when the head commit message is exactly `Update_Quality_Coverage_Score`
+- Behavior: it runs `pytest` under `coverage`, runs `pylint` against `src/`, updates the badge numbers in `README.md`, and pushes the README change back to the same branch
+
+This design keeps the trigger logic aligned with the issue request while avoiding two separate workflows racing to rewrite the same badge lines.

@@ -1,0 +1,96 @@
+name: Update Quality Badges
+
+on:
+  push:
+
+jobs:
+  update-quality-badges:
+    if: github.event.head_commit.message == 'Update_Quality_Coverage_Score'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Install project dependencies
+        run: uv sync --group dev
+
+      - name: Run tests with coverage
+        run: uv run coverage run -m pytest
+
+      - name: Capture coverage score
+        id: coverage
+        run: |
+          coverage_value="$(uv run coverage report | awk '/TOTAL/ {gsub(/%/, "", $NF); print $NF}')"
+          if [ -z "$coverage_value" ]; then
+            echo "Unable to parse coverage score." >&2
+            exit 1
+          fi
+          echo "value=$coverage_value" >> "$GITHUB_OUTPUT"
+
+      - name: Capture pylint score
+        id: pylint
+        run: |
+          set +e
+          uv run pylint src > pylint.txt 2>&1
+          pylint_exit="$?"
+          set -e
+
+          cat pylint.txt
+
+          pylint_value="$(python - <<'PY'
+          from __future__ import annotations
+
+          import pathlib
+          import re
+          import sys
+
+          text = pathlib.Path("pylint.txt").read_text(encoding="utf-8")
+          match = re.search(r"rated at ([0-9]+(?:\.[0-9]+)?)/10", text)
+          if not match:
+              sys.exit(1)
+          print(f"{float(match.group(1)):.2f}")
+          PY
+          )"
+
+          if [ -z "$pylint_value" ]; then
+            echo "Unable to parse pylint score." >&2
+            exit 1
+          fi
+
+          echo "Pylint exited with status $pylint_exit."
+          echo "value=$pylint_value" >> "$GITHUB_OUTPUT"
+
+      - name: Update README badges
+        run: >
+          uv run python scripts/update_quality_badges.py
+          --readme README.md
+          --coverage "${{ steps.coverage.outputs.value }}"
+          --pylint "${{ steps.pylint.outputs.value }}"
+
+      - name: Commit updated badges
+        run: |
+          if git diff --quiet README.md; then
+            echo "README badges are already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update quality badges"
+          git push
