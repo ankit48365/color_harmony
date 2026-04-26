@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 from bucket_details import BucketDetailsTable, build_bucket_outputs
 
 
-RefreshHistogramResult = tuple[Figure | None, BucketDetailsTable]
+RefreshHistogramResult = tuple[np.ndarray | None, Figure | None, BucketDetailsTable]
 
 
 def refresh_histogram(
@@ -22,9 +22,9 @@ def refresh_histogram(
         rgb_image: Cached RGB image from the Gradio state, or `None` before upload.
 
     Returns:
-        The refreshed histogram figure plus the reset bucket-detail rows.
+        The refreshed image preview, histogram figure, and reset bucket-detail rows.
     """
 
     if rgb_image is None:
-        return None, []
+        return None, None, []
     return build_bucket_outputs(int(bucket_count), np.array(rgb_image))

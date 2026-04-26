@@ -11,6 +11,8 @@ from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
 from hue_label import hue_label
 
 DEFAULT_SATURATION_WEIGHT = 50
+DEFAULT_BAR_SATURATION = 0.75
+DEFAULT_BAR_VALUE = 0.95
 
 
 @dataclass(frozen=True)
@@ -22,6 +24,8 @@ class HueStatistics:
     tick_labels: list[str]
     bar_colors: np.ndarray
     saturation_weights: list[int]
+    hsv_pixels: np.ndarray
+    bucket_indices: np.ndarray
 
 
 def normalize_saturation_weight(raw_weight: object) -> int:
@@ -62,6 +66,24 @@ def rgb_to_hex(color: np.ndarray) -> str:
     return f"#{red:02X}{green:02X}{blue:02X}"
 
 
+def apply_saturation_weight(
+    base_saturation: np.ndarray | float,
+    saturation_weights: np.ndarray | Sequence[float] | float,
+) -> np.ndarray:
+    """Scale saturation so 50 keeps the base value, 0 removes color, and 100 maxes it."""
+
+    base = np.asarray(base_saturation, dtype=np.float32)
+    weight_scale = np.clip(np.asarray(saturation_weights, dtype=np.float32), 0.0, 100.0)
+    weight_scale = weight_scale / 100.0
+    midpoint = 0.5
+
+    return np.where(
+        weight_scale <= midpoint,
+        base * (weight_scale / midpoint),
+        base + ((weight_scale - midpoint) / midpoint) * (1.0 - base),
+    ).astype(np.float32)
+
+
 def analyze_hue_buckets(
     rgb_image: np.ndarray,
     bucket_count: int,
@@ -78,13 +100,17 @@ def analyze_hue_buckets(
     counts = np.bincount(bucket_indices, minlength=bucket_count)
     centers = (np.arange(bucket_count, dtype=np.float32) * step) % 360.0
     weights = normalize_saturation_weights(bucket_count, saturation_weights)
+    representative_saturation = apply_saturation_weight(
+        np.full(bucket_count, DEFAULT_BAR_SATURATION, dtype=np.float32),
+        np.array(weights, dtype=np.float32),
+    )
 
     bar_colors = hsv_to_rgb(
         np.column_stack(
             [
                 centers / 360.0,
-                np.array(weights, dtype=np.float32) / 100.0,
-                np.full(bucket_count, 0.95, dtype=np.float32),
+                representative_saturation,
+                np.full(bucket_count, DEFAULT_BAR_VALUE, dtype=np.float32),
             ]
         )
     )
@@ -100,6 +126,8 @@ def analyze_hue_buckets(
         tick_labels=tick_labels,
         bar_colors=bar_colors,
         saturation_weights=weights,
+        hsv_pixels=hsv_pixels,
+        bucket_indices=bucket_indices,
     )
 
 
@@ -147,3 +175,18 @@ def compute_bucket_table_rows_from_statistics(
             statistics.saturation_weights,
         )
     ]
+
+
+def build_adjusted_preview_image(
+    statistics: HueStatistics,
+    image_shape: tuple[int, ...],
+) -> np.ndarray:
+    """Apply the bucket weights to the uploaded image while preserving each pixel's hue/value."""
+
+    adjusted_hsv = statistics.hsv_pixels.copy()
+    pixel_weights = np.array(statistics.saturation_weights, dtype=np.float32)[
+        statistics.bucket_indices
+    ]
+    adjusted_hsv[:, 1] = apply_saturation_weight(adjusted_hsv[:, 1], pixel_weights)
+    adjusted_rgb = hsv_to_rgb(adjusted_hsv).reshape(image_shape)
+    return np.clip(np.rint(adjusted_rgb * 255.0), 0, 255).astype(np.uint8)

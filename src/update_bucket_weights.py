@@ -15,6 +15,6 @@ def update_bucket_weights(
     """Apply the edited weight column and return the synchronized histogram/table."""
 
     if rgb_image is None:
-        return None, []
+        return None, None, []
 
     return build_bucket_outputs(int(bucket_count), np.array(rgb_image), bucket_details)

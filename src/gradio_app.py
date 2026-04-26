@@ -105,11 +105,16 @@ def create_demo() -> gr.Blocks:
 
         with gr.Row(visible=False) as result_sections:
             with gr.Column(elem_classes=["section-card"], scale=1):
-                gr.Markdown("### Section 1: Uploaded Image")
+                gr.Markdown("### Section 1: Live Image Preview")
                 image_preview = gr.Image(
                     label="Image Preview",
                     interactive=False,
                     buttons=["fullscreen"],
+                )
+                gr.Markdown(
+                    "Bucket weights keep the uploaded image unchanged at `50`, "
+                    "desaturate matching pixels below `50`, and saturate them above `50`.",
+                    elem_classes=["section-note"],
                 )
                 redo_button = gr.Button("Redo / Upload New Image", variant="secondary")
 
@@ -133,8 +138,8 @@ def create_demo() -> gr.Blocks:
                 gr.Markdown("### Section 4: Bucket Details")
                 gr.Markdown(
                     "Each row shows the histogram label with its current hex code, "
-                    "the share of total pixels, and a saturation weight. `50` is the "
-                    "midpoint, `0` removes color, and `100` fully saturates the hue.",
+                    "the share of total pixels, and a saturation weight. `50` keeps the "
+                    "image unchanged, `0` removes color, and `100` fully saturates it.",
                     elem_classes=["section-note"],
                 )
                 bucket_details = gr.Dataframe(
@@ -165,13 +170,13 @@ def create_demo() -> gr.Blocks:
         bucket_slider.change(  # pylint: disable=no-member
             fn=refresh_histogram,
             inputs=[bucket_slider, image_state],
-            outputs=[histogram_plot, bucket_details],
+            outputs=[image_preview, histogram_plot, bucket_details],
         )
 
-        bucket_details.edit(  # pylint: disable=no-member
+        bucket_details.input(  # pylint: disable=no-member
             fn=update_bucket_weights,
             inputs=[bucket_details, bucket_slider, image_state],
-            outputs=[histogram_plot, bucket_details],
+            outputs=[image_preview, histogram_plot, bucket_details],
         )
 
         redo_button.click(  # pylint: disable=no-member

@@ -11,13 +11,14 @@ from build_histogram import build_histogram_from_statistics
 from compute_hue_statistics import (
     DEFAULT_SATURATION_WEIGHT,
     analyze_hue_buckets,
+    build_adjusted_preview_image,
     compute_bucket_table_rows_from_statistics,
     normalize_saturation_weights,
 )
 
 BucketDetailCell = str | int | float | None
 BucketDetailsTable = list[list[BucketDetailCell]]
-BucketOutputs = tuple[Figure | None, BucketDetailsTable]
+BucketOutputs = tuple[np.ndarray | None, Figure | None, BucketDetailsTable]
 
 
 def extract_saturation_weights(
@@ -47,11 +48,13 @@ def build_bucket_outputs(
     """Build the histogram and editable bucket table from a shared analysis pass."""
 
     if rgb_image is None:
-        return None, []
+        return None, None, []
 
+    rgb_array = np.array(rgb_image)
     weights = extract_saturation_weights(bucket_details, int(bucket_count))
-    statistics = analyze_hue_buckets(np.array(rgb_image), int(bucket_count), weights)
+    statistics = analyze_hue_buckets(rgb_array, int(bucket_count), weights)
     return (
+        build_adjusted_preview_image(statistics, rgb_array.shape),
         build_histogram_from_statistics(statistics),
         compute_bucket_table_rows_from_statistics(statistics),
     )

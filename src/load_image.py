@@ -48,10 +48,13 @@ def load_image(file_path: str | None, bucket_count: int) -> LoadImageResult:
     with Image.open(file_path) as uploaded_image:
         rgb_image = np.array(ImageOps.exif_transpose(uploaded_image).convert("RGB"))
 
-    histogram, bucket_details = build_bucket_outputs(int(bucket_count), rgb_image)
+    preview_image, histogram, bucket_details = build_bucket_outputs(
+        int(bucket_count),
+        rgb_image,
+    )
     return (
         rgb_image,
-        rgb_image,
+        preview_image,
         histogram,
         bucket_details,
         gr.update(visible=False),

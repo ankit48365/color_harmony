@@ -45,6 +45,11 @@ def test_bucket_counts_cover_every_pixel_for_finer_splits() -> None:
 def test_saturation_weights_change_bucket_colors() -> None:
     rgb_image = np.array([[[255, 0, 0], [0, 255, 0], [0, 0, 255]]], dtype=np.uint8)
 
+    baseline_counts, _, _, baseline_colors = compute_hue_statistics(
+        rgb_image,
+        3,
+        saturation_weights=[50, 50, 50],
+    )
     desaturated_counts, _, _, desaturated_colors = compute_hue_statistics(
         rgb_image,
         3,
@@ -56,16 +61,22 @@ def test_saturation_weights_change_bucket_colors() -> None:
         saturation_weights=[100, 50, 50],
     )
 
-    assert desaturated_counts.tolist() == saturated_counts.tolist() == [1, 1, 1]
+    assert baseline_counts.tolist() == desaturated_counts.tolist() == saturated_counts.tolist()
+    assert baseline_counts.tolist() == [1, 1, 1]
     assert np.allclose(desaturated_colors[0][0], desaturated_colors[0][1])
+    assert baseline_colors[0][0] > baseline_colors[0][1]
+    assert saturated_colors[0][1] < baseline_colors[0][1]
     assert saturated_colors[0][0] > saturated_colors[0][1]
     assert saturated_colors[0][1] == saturated_colors[0][2]
 
 
-def test_bucket_outputs_include_hex_codes_percentages_and_sanitized_weights() -> None:
-    rgb_image = np.array([[[255, 0, 0], [0, 255, 0], [0, 0, 255]]], dtype=np.uint8)
+def test_bucket_outputs_update_preview_image_hex_codes_and_sanitized_weights() -> None:
+    rgb_image = np.array(
+        [[[200, 100, 100], [100, 200, 100], [100, 100, 200]]],
+        dtype=np.uint8,
+    )
 
-    figure, bucket_rows = build_bucket_outputs(
+    preview_image, figure, bucket_rows = build_bucket_outputs(
         3,
         rgb_image,
         bucket_details=[
@@ -75,9 +86,11 @@ def test_bucket_outputs_include_hex_codes_percentages_and_sanitized_weights() ->
         ],
     )
 
+    assert preview_image is not None
     assert figure is not None
+    assert preview_image.tolist() == [[[200, 0, 0], [200, 200, 200], [100, 100, 200]]]
     assert bucket_rows == [
         ["Red (#F20000)", "33.33%", 100],
         ["Green (#F2F2F2)", "33.33%", 0],
-        ["Blue (#7979F2)", "33.33%", 50],
+        ["Blue (#3D3DF2)", "33.33%", 50],
     ]
