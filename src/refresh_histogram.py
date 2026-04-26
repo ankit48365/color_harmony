@@ -1,12 +1,20 @@
+"""Slider callback helpers for rebuilding histogram and bucket details."""
+
 from __future__ import annotations
 
 import numpy as np
 from matplotlib.figure import Figure
 
-from build_histogram import build_histogram
+from bucket_details import BucketDetailsTable, build_bucket_outputs
 
 
-def refresh_histogram(bucket_count: int, rgb_image: np.ndarray | None) -> Figure | None:
+RefreshHistogramResult = tuple[np.ndarray | None, Figure | None, BucketDetailsTable]
+
+
+def refresh_histogram(
+    bucket_count: int,
+    rgb_image: np.ndarray | None,
+) -> RefreshHistogramResult:
     """Recompute the histogram after the user changes the bucket slider.
 
     Args:
@@ -14,9 +22,9 @@ def refresh_histogram(bucket_count: int, rgb_image: np.ndarray | None) -> Figure
         rgb_image: Cached RGB image from the Gradio state, or `None` before upload.
 
     Returns:
-        The refreshed histogram figure, or `None` when there is no uploaded image yet.
+        The refreshed image preview, histogram figure, and reset bucket-detail rows.
     """
 
     if rgb_image is None:
-        return None
-    return build_histogram(np.array(rgb_image), int(bucket_count))
+        return None, None, []
+    return build_bucket_outputs(int(bucket_count), np.array(rgb_image))

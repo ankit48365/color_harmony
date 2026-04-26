@@ -1,3 +1,5 @@
+"""Application entrypoint for the color harmony Gradio demo."""
+
 from __future__ import annotations
 
 from gradio_app import SECTION_CSS, create_demo

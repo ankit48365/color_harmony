@@ -1,3 +1,5 @@
+"""Gradio UI composition for the color harmony demo."""
+
 from __future__ import annotations
 
 import gradio as gr
@@ -6,6 +8,7 @@ from app_config import DEFAULT_BUCKETS
 from load_image import load_image
 from refresh_histogram import refresh_histogram
 from reset_app import reset_app
+from update_bucket_weights import update_bucket_weights
 
 SECTION_CSS = """
 :root {
@@ -83,9 +86,13 @@ def create_demo() -> gr.Blocks:
             gr.Markdown(
                 """
                 # JPG Color Bucket Explorer
-                Upload a `.jpg` image, choose a value `X` from **3 to 30**, and see how many pixels land in each hue class.
+                Upload a `.jpg` image, choose a value `X` from **3 to 30**, and see how
+                many pixels land in each hue class.
 
-                With `X = 3`, the buckets are centered on **red**, **green**, and **blue**. Larger `X` values split the hue wheel into finer color families.
+                With `X = 3`, the buckets are centered on **red**, **green**, and **blue**.
+                Larger `X` values split the hue wheel into finer color families, and each
+                bucket now includes a live hex code, pixel share, and editable saturation
+                weight.
                 """
             )
 
@@ -98,11 +105,16 @@ def create_demo() -> gr.Blocks:
 
         with gr.Row(visible=False) as result_sections:
             with gr.Column(elem_classes=["section-card"], scale=1):
-                gr.Markdown("### Section 1: Uploaded Image")
+                gr.Markdown("### Section 1: Live Image Preview")
                 image_preview = gr.Image(
                     label="Image Preview",
                     interactive=False,
                     buttons=["fullscreen"],
+                )
+                gr.Markdown(
+                    "Bucket weights keep the uploaded image unchanged at `50`, "
+                    "desaturate matching pixels below `50`, and saturate them above `50`.",
+                    elem_classes=["section-note"],
                 )
                 redo_button = gr.Button("Redo / Upload New Image", variant="secondary")
 
@@ -123,26 +135,51 @@ def create_demo() -> gr.Blocks:
             with gr.Column(elem_classes=["section-card"], scale=2):
                 gr.Markdown("### Section 3: Color Histogram")
                 histogram_plot = gr.Plot(label="Hue Histogram")
+                gr.Markdown("### Section 4: Bucket Details")
+                gr.Markdown(
+                    "Each row shows the histogram label with its current hex code, "
+                    "the share of total pixels, and a saturation weight. `50` keeps the "
+                    "image unchanged, `0` removes color, and `100` fully saturates it.",
+                    elem_classes=["section-note"],
+                )
+                bucket_details = gr.Dataframe(
+                    headers=["Color (HEX)", "Pixel Share", "Saturation Weight"],
+                    datatype=["str", "str", "number"],
+                    type="array",
+                    interactive=True,
+                    static_columns=[0, 1],
+                    wrap=True,
+                    max_height=420,
+                    column_widths=["46%", "22%", "32%"],
+                    show_row_numbers=True,
+                )
 
-        upload_input.change(
+        upload_input.change(  # pylint: disable=no-member
             fn=load_image,
             inputs=[upload_input, bucket_slider],
             outputs=[
                 image_state,
                 image_preview,
                 histogram_plot,
+                bucket_details,
                 upload_panel,
                 result_sections,
             ],
         )
 
-        bucket_slider.change(
+        bucket_slider.change(  # pylint: disable=no-member
             fn=refresh_histogram,
             inputs=[bucket_slider, image_state],
-            outputs=histogram_plot,
+            outputs=[image_preview, histogram_plot, bucket_details],
         )
 
-        redo_button.click(
+        bucket_details.input(  # pylint: disable=no-member
+            fn=update_bucket_weights,
+            inputs=[bucket_details, bucket_slider, image_state],
+            outputs=[image_preview, histogram_plot, bucket_details],
+        )
+
+        redo_button.click(  # pylint: disable=no-member
             fn=reset_app,
             inputs=[],
             outputs=[
@@ -151,6 +188,7 @@ def create_demo() -> gr.Blocks:
                 image_preview,
                 histogram_plot,
                 bucket_slider,
+                bucket_details,
                 upload_panel,
                 result_sections,
             ],
